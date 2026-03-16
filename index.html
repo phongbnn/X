@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>BTShare - Chia sẻ bàn phím</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#04060f;font-family:'Syne',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,200,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,.03) 1px,transparent 1px);background-size:55px 55px;pointer-events:none;}
+.wrap{width:100%;max-width:400px;position:relative;z-index:1;}
+.screen{display:none;animation:fadeUp .4s ease;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ripple{0%{transform:scale(.5);opacity:.8}100%{transform:scale(3.2);opacity:0}}
+@keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow{0%,100%{box-shadow:0 0 14px #00ffe044}50%{box-shadow:0 0 32px #00ffe088}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Cards & Inputs ── */
+.card{background:#080d1a;border:1px solid #0d1f3c;border-radius:16px;padding:18px 16px;margin-bottom:12px;}
+.lbl{color:#1e3a5c;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:8px;}
+input[type=text],input[type=number]{width:100%;background:#040810;border:1px solid #0d1f3c;border-radius:10px;padding:13px 14px;color:#c8e0ff;font-family:'JetBrains Mono',monospace;font-size:15px;outline:none;transition:border .2s;}
+input[type=text]:focus,input[type=number]:focus{border-color:#00ffe060;}
+input::placeholder{color:#1a2a44;}
+.err{color:#ff4466;font-size:12px;font-family:'JetBrains Mono',monospace;margin-top:7px;text-align:center;}
+
+/* ── Buttons ── */
+.btn{width:100%;padding:15px;border-radius:13px;border:none;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.4px;}
+.btn-green{background:linear-gradient(135deg,#003322,#005544);border:1px solid #00ffe030;color:#00ffe0;box-shadow:0 0 20px #00ffe015;}
+.btn-green:hover{box-shadow:0 0 30px #00ffe035;transform:translateY(-2px);}
+.btn-purple{background:linear-gradient(135deg,#1a1040,#2d1a80);border:1px solid #7c6fff30;color:#7c6fff;box-shadow:0 0 20px #7c6fff15;}
+.btn-purple:hover{box-shadow:0 0 30px #7c6fff35;transform:translateY(-2px);}
+.btn:active{transform:scale(.97)!important;}
+.btn-back{background:none;border:none;color:#1e3050;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;padding:0;margin-bottom:18px;display:flex;align-items:center;gap:6px;}
+
+/* ── Action Cards ── */
+.acard{background:#080d1a;border:1px solid #0d1f3c;border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s;width:100%;margin-bottom:10px;text-align:left;}
+.acard:hover{transform:translateY(-2px);}
+.acard-icon{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.acard-title{color:#c8e0ff;font-size:15px;font-weight:700;margin-bottom:3px;}
+.acard-sub{color:#1e3050;font-size:11px;font-family:'JetBrains Mono',monospace;line-height:1.5;}
+.acard-arr{font-size:18px;flex-shrink:0;margin-left:auto;}
+
+/* ── BT Ripple ── */
+.bt-wrap{position:relative;width:90px;height:90px;margin:0 auto 24px;}
+.bt-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid #00ffe0;animation:ripple 2s ease-out infinite;}
+.bt-ring:nth-child(2){animation-delay:.6s;}
+.bt-ring:nth-child(3){animation-delay:1.2s;}
+.bt-core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:rgba(0,255,224,.08);border:2px solid #00ffe0;display:flex;align-items:center;justify-content:center;font-size:24px;}
+
+/* ── Code digits ── */
+.code-row{display:flex;gap:7px;justify-content:center;margin-bottom:18px;}
+.code-digit{width:46px;height:58px;display:flex;align-items:center;justify-content:center;background:#040e08;border:1px solid #00ffe030;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:#00ffe0;box-shadow:0 0 12px #00ffe015;}
+
+/* ── Info rows ── */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #0d1f3c;}
+.info-row:last-child{border-bottom:none;}
+.info-l{color:#1e3050;font-size:12px;font-family:'JetBrains Mono',monospace;}
+.info-v{color:#c8e0ff;font-size:13px;font-weight:600;}
+
+/* ── Badge ── */
+.badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#080d1a;border:1px solid #0d1f3c;border-radius:30px;margin-bottom:20px;}
+.badge-dot{width:7px;height:7px;border-radius:50%;background:#00ffe0;box-shadow:0 0 8px #00ffe0;animation:blink 2s infinite;flex-shrink:0;}
+.badge-name{color:#5080a0;font-size:12px;font-family:'JetBrains Mono',monospace;}
+
+/* ── Device list ── */
+.dev-item{background:#080d1a;border:1px solid #0d2020;border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:8px;transition:all .2s;}
+.dev-item:hover,.dev-item:active{background:rgba(0,255,200,.06);border-color:#00ffe030;transform:translateX(4px);}
+.dev-icon{width:40px;height:40px;border-radius:10px;background:rgba(0,255,200,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.dev-name{color:#c8e0ff;font-size:14px;font-weight:600;}
+.dev-status{color:#00ffe0;font-size:11px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:5px;margin-top:2px;}
+.dev-dot{width:5px;height:5px;border-radius:50%;background:#00ffe0;animation:blink 1.4s infinite;}
+
+/* ── Progress bar ── */
+.prog-wrap{height:3px;background:rgba(0,255,200,.08);border-radius:3px;margin-bottom:20px;overflow:hidden;}
+.prog-bar{height:100%;background:linear-gradient(90deg,#007aaa,#00ffe0);transition:width .1s;box-shadow:0 0 8px #00ffe0;}
+
+/* ── Approve buttons ── */
+.approve-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-deny{padding:14px;border-radius:12px;background:rgba(255,50,80,.07);border:1px solid rgba(255,50,80,.25);color:#ff4466;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-allow{padding:14px;border-radius:12px;background:rgba(0,255,100,.07);border:1px solid rgba(0,255,100,.25);color:#00ff88;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;}
+
+/* ── Success icon ── */
+.success-icon{width:78px;height:78px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;animation:pop .5s ease;}
+
+/* ── Code input ── */
+.code-input{width:100%;background:#040810;border:1px solid #1a1f3c;border-radius:12px;padding:16px;color:#a090ff;font-family:'JetBrains Mono',monospace;font-size:30px;outline:none;text-align:center;letter-spacing:16px;transition:border .2s;caret-color:#7c6fff;}
+.code-input:focus{border-color:rgba(124,111,255,.6);}
+
+/* ── Tip box ── */
+.tip{padding:11px 14px;border-radius:10px;font-size:12px;font-family:'JetBrains Mono',monospace;line-height:1.65;margin-top:10px;}
+.tip-green{background:#08100a;border:1px solid #0a2515;color:#1a4a25;}
+.tip-yellow{background:rgba(255,180,0,.05);border:1px solid rgba(255,180,0,.15);color:#5a4010;}
+
+/* ── Notify ring (approve) ── */
+.notif-icon{width:68px;height:68px;border-radius:50%;background:rgba(124,111,255,.1);border:2px solid rgba(124,111,255,.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;}
+
+/* ── Waiting ripple purple ── */
+.bt-wrap-purple .bt-ring{border-color:#7c6fff;}
+.bt-wrap-purple .bt-core{background:rgba(124,111,255,.1);border-color:#7c6fff;}
+
+/* Center heading util */
+.tc{text-align:center;}
+.mt8{margin-top:8px;}
+.mt12{margin-top:12px;}
+.mt16{margin-top:16px;}
+.mt24{margin-top:24px;}
+.mt28{margin-top:28px;}
+.mb8{margin-bottom:8px;}
+.mb12{margin-bottom:12px;}
+.mb20{margin-bottom:20px;}
+.mb28{margin-bottom:28px;}
+.tag{font-size:10px;letter-spacing:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;}
+.h1{font-size:28px;font-weight:800;color:#fff;line-height:1.15;}
+.h2{font-size:22px;font-weight:800;color:#fff;}
+.sub{color:#1e3050;font-size:13px;font-family:'JetBrains Mono',monospace;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+
+<!-- ═══ SETUP ═══ -->
+<div id="s-setup" class="screen active">
+  <div class="tc mb28" style="padding-top:10px">
+    <div style="width:70px;height:70px;border-radius:20px;background:linear-gradient(135deg,#001a33,#002244);border:1.5px solid #00ffe033;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px;animation:glow 3s ease infinite;">⌨️</div>
+    <h1 class="h1">BT<span style="color:#00ffe0">Share</span></h1>
+    <p class="sub mt8">Chia sẻ bàn phím Bluetooth</p>
+  </div>
+  <div class="card">
+    <label class="lbl">Tên thiết bị của bạn</label>
+    <input type="text" id="inp-name" placeholder="VD: Samsung S24 của Nam"/>
+    <div id="err-name" class="err" style="display:none"></div>
+  </div>
+  <button class="btn btn-green mt8" onclick="doSetup()">Bắt đầu →</button>
+</div>
+
+<!-- ═══ HOME ═══ -->
+<div id="s-home" class="screen">
+  <div class="tc mb28">
+    <div class="badge"><span class="badge-dot"></span><span class="badge-name" id="badge-name"></span></div>
+    <h2 class="h2">Chọn chức năng</h2>
+  </div>
+  <button class="acard" onclick="goScan()" id="acard-create">
+    <div class="acard-icon" style="background:rgba(0,255,200,.08);border:1px solid #00ffe020;">📡</div>
+    <div style="flex:1">
+      <div class="acard-title">Tạo mã chia sẻ</div>
+      <div class="acard-sub">Bật Bluetooth, chọn thiết bị → Nhận mã 6 số</div>
+    </div>
+    <span class="acard-arr" style="color:#00ffe0">›</span>
+  </button>
+  <button class="acard" onclick="goEnter()">
+    <div class="acard-icon" style="background:rgba(124,111,255,.08);border:1px solid #7c6fff20;">🔑</div>
+    <div style="flex:1">
+      <div class="acard-title">Nhập mã kết nối</div>
+      <div class="acard-sub">Nhập mã từ điện thoại kia để xin quyền</div>
+    </div>
+    <span class="acard-arr" style="color:#7c6fff">›</span>
+  </button>
+</div>
+
+<!-- ═══ SCAN / CHỌN THIẾT BỊ ═══ -->
+<div id="s-scan" class="screen">
+  <button class="btn-back" onclick="show('s-home')">← quay lại</button>
+  <div class="tc mb20">
+    <div class="bt-wrap" id="bt-wrap">
+      <div class="bt-ring"></div><div class="bt-ring"></div><div class="bt-ring"></div>
+      <div class="bt-core" id="bt-core"><span id="bt-ico" style="animation:blink 1s infinite">🔵</span></div>
+    </div>
+    <h2 class="h2" id="scan-title">Đang quét Bluetooth...</h2>
+    <p class="sub mt8" id="scan-sub">Đảm bảo bàn phím đang bật nguồn</p>
+  </div>
+  <div class="prog-wrap" id="prog-wrap">
+    <div class="prog-bar" id="prog-bar" style="width:0%"></div>
+  </div>
+  <div id="dev-list"></div>
+  <p id="scan-empty" style="text-align:center;color:#1a2a44;font-size:13px;font-family:'JetBrains Mono',monospace;padding:16px 0;display:none">Không tìm thấy thiết bị nào gần đây</p>
+</div>
+
+<!-- ═══ CODE ═══ -->
+<div id="s-code" class="screen">
+  <div class="tc mb28">
+    <p class="tag mb8" style="color:#00ffe060">MÃ GHÉP NỐI</p>
+    <h2 class="h2">Gửi mã này cho ĐT kia</h2>
+    <p class="sub mt8">⌨️ <span id="code-kb"></span></p>
+  </div>
+  <div class="card tc">
+    <div class="code-row" id="code-digits"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+      <span style="width:6px;height:6px;border-radius:50%;background:#00ffe0;display:inline-block;animation:blink 1.2s infinite"></span>
+      <span style="color:#1e4030;font-size:12px;font-family:'JetBrains Mono',monospace">Đang chờ thiết bị kia nhập mã...</span>
+    </div>
+  </div>
+  <div class="tip tip-green">💡 ĐT2 mở app → "Nhập mã kết nối" → nhập mã <b id="code-hint" style="color:#00ffe060"></b></div>
+</div>
+
+<!-- ═══ APPROVE ═══ -->
+<div id="s-approve" class="screen">
+  <div class="tc mb20">
+    <div class="notif-icon">🔔</div>
+    <p class="tag mb8" style="color:#7c6fff80">YÊU CẦU MỚI</p>
+    <h2 class="h2">Cho phép kết nối?</h2>
+  </div>
+  <div class="card mb12">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+      <div style="width:46px;height:46px;border-radius:12px;background:rgba(124,111,255,.1);border:1px solid rgba(124,111,255,.25);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📱</div>
+      <div>
+        <div style="color:#c8e0ff;font-weight:700;font-size:15px" id="req-name"></div>
+        <div style="color:#1e3050;font-size:12px;font-family:'JetBrains Mono',monospace">muốn dùng bàn phím của bạn</div>
+      </div>
+    </div>
+    <div style="padding:9px 12px;background:#040810;border-radius:8px;font-size:13px;color:#2a4060;font-family:'JetBrains Mono',monospace">⌨️ <span id="req-kb"></span></div>
+  </div>
+  <div class="approve-grid">
+    <button class="btn-deny" onclick="doApprove(false)">Từ chối ✗</button>
+    <button class="btn-allow" onclick="doApprove(true)">Đồng ý ✓</button>
+  </div>
+</div>
+
+<!-- ═══ OWNER OK ═══ -->
+<div id="s-owner-ok" class="screen tc">
+  <div class="success-icon" style="background:rgba(0,255,136,.07);border:2px solid #00ff88">✓</div>
+  <p class="tag mb8" style="color:#00ff8880">ĐÃ CẤP QUYỀN</p>
+  <h2 class="h2 mb20">Thành công!</h2>
+  <div class="card" style="text-align:left;margin-bottom:12px">
+    <div class="info-row"><span class="info-l">Cấp cho</span><span class="info-v" id="ok-requester"></span></div>
+    <div class="info-row"><span class="info-l">Bàn phím</span><span class="info-v" id="ok-kb"></span></div>
+    <div class="info-row"><span class="info-l">Trạng thái</span><span class="info-v">🟢 Đang hoạt động</span></div>
+  </div>
+  <button class="btn btn-green" onclick="show('s-home')">← Về trang chính</button>
+</div>
+
+<!-- ═══ ENTER CODE ═══ -->
+<div id="s-enter" class="screen">
+  <button class="btn-back" onclick="show('s-home')">← quay lại</button>
+  <div class="tc mb28">
+    <p class="tag mb8" style="color:#7c6fff80">NHẬP MÃ</p>
+    <h2 class="h2">Kết nối bàn phím</h2>
+    <p class="sub mt8">Nhập mã 6 số từ điện thoại kia</p>
+  </div>
+  <div class="card mb12">
+    <input class="code-input" id="inp-code" type="number" maxlength="6" inputmode="numeric" placeholder="● ● ● ● ● ●" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)"/>
+    <div id="err-code" class="err" style="display:none;margin-top:8px"></div>
+  </div>
+  <button class="btn btn-purple" onclick="doSubmitCode()">Xác nhận kết nối</button>
+  <div class="tip tip-green mt12">💡 Đảm bảo Bluetooth của thiết bị này đang bật</div>
+</div>
+
+<!-- ═══ WAITING ═══ -->
+<div id="s-waiting" class="screen tc">
+  <div class="bt-wrap bt-wrap-purple mb24" style="margin:0 auto 24px">
+    <div class="bt-ring"></div><div class="bt-ring"></div><div class="bt-ring"></div>
+    <div class="bt-core"><span style="animation:blink 1.2s infinite">📡</span></div>
+  </div>
+  <p class="tag mb8" style="color:#7c6fff80">ĐANG CHỜ</p>
+  <h2 class="h2 mb8">Yêu cầu đã gửi</h2>
+  <p class="sub">Chờ điện thoại kia xác nhận...</p>
+  <div style="margin-top:24px;padding:13px 18px;background:#080d1a;border:1px solid #1a1f3c;border-radius:12px">
+    <p style="color:#1a2540;font-size:11px;font-family:'JetBrains Mono',monospace;margin-bottom:6px">Mã đã nhập</p>
+    <p id="wait-code" style="font-family:'JetBrains Mono',monospace;color:#7c6fff;font-size:26px;letter-spacing:14px"></p>
+  </div>
+</div>
+
+<!-- ═══ DONE ═══ -->
+<div id="s-done" class="screen tc">
+  <div class="success-icon" style="background:rgba(124,111,255,.1);border:2px solid #7c6fff">⌨️</div>
+  <p class="tag mb8" style="color:#7c6fff80">KẾT NỐI THÀNH CÔNG</p>
+  <h2 class="h2 mb8">Bàn phím sẵn sàng!</h2>
+  <p class="sub mb20">Bạn đã được cấp quyền sử dụng</p>
+  <div class="card" style="text-align:left;margin-bottom:12px">
+    <div class="info-row"><span class="info-l">Từ thiết bị</span><span class="info-v" id="done-owner"></span></div>
+    <div class="info-row"><span class="info-l">Bàn phím</span><span class="info-v" id="done-kb"></span></div>
+    <div class="info-row"><span class="info-l">Quyền</span><span class="info-v">🟢 Đã kích hoạt</span></div>
+  </div>
+  <div style="padding:11px 14px;background:#040e08;border:1px solid #0a2515;border-radius:10px;color:#1a4a25;font-size:12px;font-family:'JetBrains Mono',monospace;line-height:1.65;margin-bottom:12px">
+    ✅ Bàn phím Bluetooth đã được kết nối với thiết bị của bạn
+  </div>
+  <button class="btn btn-purple" onclick="show('s-home')">← Về trang chính</button>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ── State ──────────────────────────────────────────────────
+let myName = '';
+let currentCode = '';
+let currentKB = '';
+let currentSess = null;
+let reqInfo = null;
+let pollTimer = null;
+
+const SKEY = c => 'btshare-' + c;
+const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
+
+// ── Fake BT devices ────────────────────────────────────────
+const FAKE_KBs = [
+  'Logitech K380 Bluetooth',
+  'Apple Magic Keyboard',
+  'Samsung Smart Keyboard',
+  'Keychron K3 Wireless',
+  'Microsoft Designer KB',
+  'Bàn phím Bluetooth Generic'
+];
+
+// ── Storage helpers ────────────────────────────────────────
+async function storeSet(key, val) {
+  try { await window.storage.set(key, JSON.stringify(val), true); } catch(e) {}
+}
+async function storeGet(key) {
+  try {
+    const r = await window.storage.get(key, true);
+    return r ? JSON.parse(r.value) : null;
+  } catch(e) { return null; }
+}
+
+// ── Screens ────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── Setup ──────────────────────────────────────────────────
+function doSetup() {
+  const v = document.getElementById('inp-name').value.trim();
+  const err = document.getElementById('err-name');
+  if (!v) { err.textContent = 'Nhập tên thiết bị trước'; err.style.display='block'; return; }
+  err.style.display = 'none';
+  myName = v;
+  document.getElementById('badge-name').textContent = myName;
+  show('s-home');
+}
+
+// ── Scan ───────────────────────────────────────────────────
+function goScan() {
+  clearInterval(pollTimer);
+  show('s-scan');
+  startScan();
+}
+
+function startScan() {
+  const list = document.getElementById('dev-list');
+  const prog = document.getElementById('prog-bar');
+  const progWrap = document.getElementById('prog-wrap');
+  const title = document.getElementById('scan-title');
+  const sub = document.getElementById('scan-sub');
+  const empty = document.getElementById('scan-empty');
+  const btCore = document.getElementById('bt-core');
+
+  list.innerHTML = '';
+  prog.style.width = '0%';
+  progWrap.style.display = 'block';
+  empty.style.display = 'none';
+  title.textContent = 'Đang quét Bluetooth...';
+  sub.textContent = 'Đảm bảo bàn phím đang bật nguồn';
+
+  // Shuffle & pick random 0–3 devices (simulate real BT: sometimes none)
+  const picked = [...FAKE_KBs].sort(() => Math.random()-.5).slice(0, Math.floor(Math.random()*4));
+  let pct = 0;
+  let added = 0;
+
+  const t = setInterval(() => {
+    pct += 4;
+    prog.style.width = Math.min(pct,100) + '%';
+
+    // Add devices gradually as scan progresses
+    if (pct >= 30 && added === 0 && picked[0]) { addDevice(picked[0]); added++; }
+    if (pct >= 55 && added === 1 && picked[1]) { addDevice(picked[1]); added++; }
+    if (pct >= 75 && added === 2 && picked[2]) { addDevice(picked[2]); added++; }
+
+    if (pct >= 100) {
+      clearInterval(t);
+      progWrap.style.display = 'none';
+      btCore.innerHTML = '📶';
+      title.textContent = picked.length > 0 ? 'Chọn bàn phím' : 'Không tìm thấy';
+      sub.textContent = picked.length > 0 ? 'Chạm vào thiết bị để tạo mã' : 'Không có thiết bị nào gần đây';
+      if (picked.length === 0) empty.style.display = 'block';
+    }
+  }, 55);
+}
+
+function addDevice(name) {
+  const list = document.getElementById('dev-list');
+  const el = document.createElement('div');
+  el.className = 'dev-item';
+  el.innerHTML = `
+    <div class="dev-icon">⌨️</div>
+    <div style="flex:1">
+      <div class="dev-name">${name}</div>
+      <div class="dev-status"><span class="dev-dot"></span> Bluetooth · Tín hiệu tốt</div>
+    </div>
+    <span style="color:#00ffe0;font-size:20px">›</span>
+  `;
+  el.onclick = () => makeCode(name);
+  el.style.animation = 'fadeUp .35s ease';
+  list.appendChild(el);
+}
+
+// ── Make Code ─────────────────────────────────────────────
+async function makeCode(kb) {
+  currentKB = kb;
+  currentCode = genCode();
+
+  const data = {
+    code: currentCode,
+    owner: myName,
+    keyboard: kb,
+    status: 'waiting',
+    requester: null,
+    ts: Date.now()
+  };
+  currentSess = data;
+  await storeSet(SKEY(currentCode), data);
+
+  // Render code screen
+  document.getElementById('code-kb').textContent = kb;
+  document.getElementById('code-hint').textContent = currentCode;
+
+  const row = document.getElementById('code-digits');
+  row.innerHTML = '';
+  currentCode.split('').forEach((d, i) => {
+    const el = document.createElement('div');
+    el.className = 'code-digit';
+    el.textContent = d;
+    el.style.animation = `slideUp .4s ease ${i*.08}s both`;
+    row.appendChild(el);
+  });
+
+  show('s-code');
+
+  // Poll for requests
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    const d = await storeGet(SKEY(currentCode));
+    if (d && d.status === 'requested') {
+      clearInterval(pollTimer);
+      reqInfo = d;
+      document.getElementById('req-name').textContent = d.requester;
+      document.getElementById('req-kb').textContent = d.keyboard;
+      show('s-approve');
+    }
+  }, 1500);
+}
+
+// ── Approve ───────────────────────────────────────────────
+async function doApprove(yes) {
+  const upd = { ...reqInfo, status: yes ? 'approved' : 'denied' };
+  await storeSet(SKEY(upd.code), upd);
+  if (yes) {
+    document.getElementById('ok-requester').textContent = reqInfo.requester;
+    document.getElementById('ok-kb').textContent = '⌨️ ' + reqInfo.keyboard;
+    show('s-owner-ok');
+  } else {
+    show('s-home');
+  }
+}
+
+// ── Enter code ────────────────────────────────────────────
+function goEnter() {
+  document.getElementById('inp-code').value = '';
+  document.getElementById('err-code').style.display = 'none';
+  show('s-enter');
+}
+
+async function doSubmitCode() {
+  const c = document.getElementById('inp-code').value.trim();
+  const err = document.getElementById('err-code');
+
+  if (c.length !== 6) {
+    err.textContent = 'Nhập đủ 6 chữ số'; err.style.display = 'block'; return;
+  }
+  err.style.display = 'none';
+
+  document.getElementById('wait-code').textContent = c;
+  show('s-waiting');
+
+  const d = await storeGet(SKEY(c));
+  if (!d) {
+    document.getElementById('err-code').textContent = 'Mã không đúng hoặc hết hạn';
+    document.getElementById('err-code').style.display = 'block';
+    show('s-enter'); return;
+  }
+  if (d.status !== 'waiting') {
+    document.getElementById('err-code').textContent = 'Mã này đã được dùng rồi';
+    document.getElementById('err-code').style.display = 'block';
+    show('s-enter'); return;
+  }
+
+  const upd = { ...d, status: 'requested', requester: myName };
+  await storeSet(SKEY(c), upd);
+  currentSess = upd;
+
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    const d2 = await storeGet(SKEY(c));
+    if (!d2) return;
+    if (d2.status === 'approved') {
+      clearInterval(pollTimer);
+      document.getElementById('done-owner').textContent = d2.owner;
+      document.getElementById('done-kb').textContent = '⌨️ ' + d2.keyboard;
+      show('s-done');
+    } else if (d2.status === 'denied') {
+      clearInterval(pollTimer);
+      document.getElementById('err-code').textContent = 'Yêu cầu bị từ chối';
+      document.getElementById('err-code').style.display = 'block';
+      show('s-enter');
+    }
+  }, 1500);
+}
+
+// ── Enter key support ─────────────────────────────────────
+document.getElementById('inp-name').addEventListener('keydown', e => { if(e.key==='Enter') doSetup(); });
+document.getElementById('inp-code').addEventListener('keydown', e => { if(e.key==='Enter') doSubmitCode(); });
+</script>
+</body>
+</html>
+
