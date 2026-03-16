@@ -18,15 +18,16 @@ body{background:#04060f;font-family:'Syne',sans-serif;min-height:100vh;display:f
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
 @keyframes slideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
 @keyframes glow{0%,100%{box-shadow:0 0 14px #00ffe044}50%{box-shadow:0 0 32px #00ffe088}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .card{background:#080d1a;border:1px solid #0d1f3c;border-radius:16px;padding:18px 16px;margin-bottom:12px;}
 .lbl{color:#1e3a5c;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:8px;}
 input[type=text]{width:100%;background:#040810;border:1px solid #0d1f3c;border-radius:10px;padding:13px 14px;color:#c8e0ff;font-family:'JetBrains Mono',monospace;font-size:15px;outline:none;transition:border .2s;}
 input[type=text]:focus{border-color:#00ffe060;}
 input::placeholder{color:#1a2a44;}
 .btn{width:100%;padding:15px;border-radius:13px;border:none;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;}
-.btn-green{background:linear-gradient(135deg,#003322,#005544);border:1px solid #00ffe030;color:#00ffe0;box-shadow:0 0 20px #00ffe015;}
+.btn-green{background:linear-gradient(135deg,#003322,#005544);border:1px solid #00ffe040;color:#00ffe0;box-shadow:0 0 20px #00ffe015;}
 .btn-green:active{transform:scale(.97);}
-.btn-purple{background:linear-gradient(135deg,#1a1040,#2d1a80);border:1px solid #7c6fff30;color:#7c6fff;box-shadow:0 0 20px #7c6fff15;}
+.btn-purple{background:linear-gradient(135deg,#1a1040,#2d1a80);border:1px solid #7c6fff40;color:#7c6fff;box-shadow:0 0 20px #7c6fff15;}
 .btn-purple:active{transform:scale(.97);}
 .btn-back{background:none;border:none;color:#1e3050;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;padding:0;margin-bottom:18px;}
 .err{color:#ff4466;font-size:12px;font-family:'JetBrains Mono',monospace;margin-top:7px;text-align:center;}
@@ -41,10 +42,11 @@ input::placeholder{color:#1a2a44;}
 .info-l{color:#1e3050;font-size:12px;font-family:'JetBrains Mono',monospace;}
 .info-v{color:#c8e0ff;font-size:13px;font-weight:600;}
 .bt-wrap{position:relative;width:90px;height:90px;margin:0 auto 24px;}
-.bt-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid #00ffe0;animation:ripple 2s ease-out infinite;}
+.bt-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid #00ffe0;animation:ripple 2s ease-out infinite;opacity:0;animation-play-state:paused;}
+.bt-ring.active{opacity:1;animation-play-state:running;}
 .bt-ring:nth-child(2){animation-delay:.6s;}
 .bt-ring:nth-child(3){animation-delay:1.2s;}
-.bt-core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:rgba(0,255,224,.08);border:2px solid #00ffe0;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.bt-core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:rgba(0,255,224,.08);border:2px solid #00ffe0;display:flex;align-items:center;justify-content:center;font-size:24px;transition:all .3s;}
 .approve-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .btn-deny{padding:14px;border-radius:12px;background:rgba(255,50,80,.07);border:1px solid rgba(255,50,80,.25);color:#ff4466;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
 .btn-allow{padding:14px;border-radius:12px;background:rgba(0,255,100,.07);border:1px solid rgba(0,255,100,.25);color:#00ff88;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
@@ -56,24 +58,22 @@ input::placeholder{color:#1a2a44;}
 .tip-yellow{background:rgba(255,180,0,.05);border:1px solid rgba(255,180,0,.2);color:#6a5010;}
 .tag{font-size:10px;letter-spacing:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;}
 .tc{text-align:center;}
-.mt8{margin-top:8px;}
-.mt12{margin-top:12px;}
-.mt20{margin-top:20px;}
-.mt24{margin-top:24px;}
-.mb8{margin-bottom:8px;}
-.mb12{margin-bottom:12px;}
-.mb20{margin-bottom:20px;}
-.mb24{margin-bottom:24px;}
-.mb28{margin-bottom:28px;}
-
-/* Firebase setup screen */
+.mt8{margin-top:8px;}.mt12{margin-top:12px;}.mt20{margin-top:20px;}.mt24{margin-top:24px;}
+.mb8{margin-bottom:8px;}.mb12{margin-bottom:12px;}.mb20{margin-bottom:20px;}.mb24{margin-bottom:24px;}.mb28{margin-bottom:28px;}
+.bt-scan-btn{width:100%;padding:18px;border-radius:16px;border:2px solid #00ffe040;background:linear-gradient(135deg,#001a0f,#003322);color:#00ffe0;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:12px;}
+.bt-scan-btn:active{transform:scale(.97);}
+.bt-scan-btn.scanning{border-color:#00ffe0;box-shadow:0 0 30px #00ffe030;}
+.dev-card{background:#080d1a;border:1px solid #00ffe025;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;margin-bottom:10px;transition:all .2s;animation:slideUp .4s ease both;}
+.dev-card:active{transform:scale(.98);}
+.dev-card-icon{width:46px;height:46px;border-radius:12px;background:rgba(0,255,200,.06);border:1px solid #00ffe020;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.db-input{width:100%;background:#040810;border:1px solid #00ffe030;border-radius:10px;padding:12px 14px;color:#00ffe0;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;}
+.db-input:focus{border-color:#00ffe060;}
 .setup-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #0d1f3c;}
 .setup-step:last-child{border-bottom:none;}
-.step-num{width:26px;height:26px;border-radius:50%;background:rgba(0,255,200,.08);border:1px solid #00ffe030;display:flex;align-items:center;justify-content:center;color:#00ffe0;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px;}
-.step-text{color:#3a5070;font-size:13px;font-family:'JetBrains Mono',monospace;line-height:1.6;}
-.step-text b{color:#6a90b0;}
-.db-input{width:100%;background:#040810;border:1px solid #00ffe030;border-radius:10px;padding:12px 14px;color:#00ffe0;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;margin-top:8px;}
-.db-input:focus{border-color:#00ffe060;}
+.step-num{width:24px;height:24px;border-radius:50%;background:rgba(0,255,200,.08);border:1px solid #00ffe030;display:flex;align-items:center;justify-content:center;color:#00ffe0;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.step-text{color:#3a5070;font-size:12px;font-family:'JetBrains Mono',monospace;line-height:1.7;}
+.step-text b{color:#5a8090;}
+.spin{display:inline-block;animation:spin 1s linear infinite;}
 </style>
 </head>
 <body>
@@ -83,52 +83,30 @@ input::placeholder{color:#1a2a44;}
 <!-- ═══ FIREBASE SETUP ═══ -->
 <div id="s-firebase" class="screen active">
   <div class="tc mb24" style="padding-top:10px">
-    <div style="width:70px;height:70px;border-radius:20px;background:linear-gradient(135deg,#001a33,#002244);border:1.5px solid #00ffe033;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;animation:glow 3s ease infinite;">⌨️</div>
+    <div style="width:70px;height:70px;border-radius:20px;background:linear-gradient(135deg,#001a33,#002244);border:1.5px solid #00ffe033;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;animation:glow 3s ease infinite">⌨️</div>
     <h1 style="font-size:28px;font-weight:800;color:#fff">BT<span style="color:#00ffe0">Share</span></h1>
-    <p style="color:#1e3050;font-size:12px;font-family:'JetBrains Mono',monospace;margin-top:6px">Cần kết nối Firebase để 2 máy giao tiếp</p>
+    <p style="color:#1e3050;font-size:12px;font-family:'JetBrains Mono',monospace;margin-top:6px">Nhập Firebase URL để 2 máy kết nối nhau</p>
   </div>
-
   <div class="card mb12">
-    <p style="color:#00ffe080;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;margin-bottom:12px">BƯỚC 1 — TẠO FIREBASE (MIỄN PHÍ)</p>
-    <div class="setup-step">
-      <div class="step-num">1</div>
-      <div class="step-text">Vào <b>console.firebase.google.com</b> → đăng nhập Google</div>
-    </div>
-    <div class="setup-step">
-      <div class="step-num">2</div>
-      <div class="step-text">Bấm <b>"Add project"</b> → đặt tên <b>BTShare</b> → Continue → Create</div>
-    </div>
-    <div class="setup-step">
-      <div class="step-num">3</div>
-      <div class="step-text">Trong menu trái → <b>Build</b> → <b>Realtime Database</b></div>
-    </div>
-    <div class="setup-step">
-      <div class="step-num">4</div>
-      <div class="step-text">Bấm <b>"Create database"</b> → chọn <b>Singapore</b> → chọn <b>"Start in test mode"</b> → Enable</div>
-    </div>
-    <div class="setup-step">
-      <div class="step-num">5</div>
-      <div class="step-text">Copy link database ở trên cùng, dạng:<br/><b>https://btshare-xxxxx-default-rtdb.asia-southeast1.firebasedatabase.app</b></div>
-    </div>
+    <p style="color:#00ffe080;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;margin-bottom:12px">HƯỚNG DẪN TẠO FIREBASE MIỄN PHÍ</p>
+    <div class="setup-step"><div class="step-num">1</div><div class="step-text">Vào <b>console.firebase.google.com</b> → đăng nhập Google</div></div>
+    <div class="setup-step"><div class="step-num">2</div><div class="step-text">Tạo project → menu trái → <b>Databases & Storage → Realtime Database</b></div></div>
+    <div class="setup-step"><div class="step-num">3</div><div class="step-text"><b>Create Database → Singapore → Test mode → Enable</b></div></div>
+    <div class="setup-step"><div class="step-num">4</div><div class="step-text">Copy link dạng: <b>https://tên-default-rtdb.asia-southeast1.firebasedatabase.app</b></div></div>
   </div>
-
   <div class="card mb12">
-    <p style="color:#00ffe080;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;margin-bottom:10px">BƯỚC 2 — DÁN LINK VÀO ĐÂY</p>
-    <input class="db-input" id="inp-dburl" type="text" placeholder="https://btshare-xxxxx-default-rtdb.asia-southeast1.firebasedatabase.app"/>
+    <label class="lbl">Dán Firebase URL vào đây</label>
+    <input class="db-input" id="inp-dburl" type="text" placeholder="https://xxx-default-rtdb.asia-southeast1.firebasedatabase.app"/>
     <div id="err-db" class="err" style="display:none"></div>
   </div>
-
   <button class="btn btn-green" onclick="saveDB()">Xác nhận & Bắt đầu →</button>
-
-  <div class="tip tip-yellow mt12">
-    ⚡ Chỉ cần làm 1 lần. Sau đó gửi link app cho người kia, họ nhập cùng URL Firebase là 2 máy kết nối được nhau!
-  </div>
+  <div class="tip tip-yellow mt12">⚡ Cả 2 máy nhập cùng 1 URL Firebase mới giao tiếp được nhau!</div>
 </div>
 
 <!-- ═══ SETUP TÊN ═══ -->
 <div id="s-setup" class="screen">
   <div class="tc mb28" style="padding-top:10px">
-    <div style="width:70px;height:70px;border-radius:20px;background:linear-gradient(135deg,#001a33,#002244);border:1.5px solid #00ffe033;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px;animation:glow 3s ease infinite;">⌨️</div>
+    <div style="width:70px;height:70px;border-radius:20px;background:linear-gradient(135deg,#001a33,#002244);border:1.5px solid #00ffe033;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px;animation:glow 3s ease infinite">⌨️</div>
     <h1 style="font-size:28px;font-weight:800;color:#fff">BT<span style="color:#00ffe0">Share</span></h1>
     <p style="color:#1e3050;font-size:12px;font-family:'JetBrains Mono',monospace;margin-top:6px">Chia sẻ bàn phím Bluetooth</p>
   </div>
@@ -146,11 +124,11 @@ input::placeholder{color:#1a2a44;}
     <div class="badge"><span class="badge-dot"></span><span style="color:#5080a0;font-size:12px;font-family:'JetBrains Mono',monospace" id="badge-name"></span></div>
     <h2 style="font-size:22px;font-weight:800;color:#fff">Chọn chức năng</h2>
   </div>
-  <button class="acard" onclick="goCreate()">
+  <button class="acard" onclick="goScan()">
     <div style="width:50px;height:50px;border-radius:13px;background:rgba(0,255,200,.08);border:1px solid #00ffe020;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📡</div>
     <div style="flex:1">
       <div style="color:#c8e0ff;font-size:15px;font-weight:700;margin-bottom:3px">Tạo mã chia sẻ</div>
-      <div style="color:#1e3050;font-size:11px;font-family:'JetBrains Mono',monospace;line-height:1.5">Nhập tên bàn phím → Tạo mã 6 số → Gửi cho ĐT kia</div>
+      <div style="color:#1e3050;font-size:11px;font-family:'JetBrains Mono',monospace;line-height:1.5">Bật Bluetooth → Chrome quét thiết bị thật → Tạo mã</div>
     </div>
     <span style="color:#00ffe0;font-size:18px;margin-left:auto">›</span>
   </button>
@@ -164,20 +142,30 @@ input::placeholder{color:#1a2a44;}
   </button>
 </div>
 
-<!-- ═══ TẠO MÃ — NHẬP TÊN BÀN PHÍM ═══ -->
-<div id="s-create" class="screen">
+<!-- ═══ BLUETOOTH SCAN ═══ -->
+<div id="s-scan" class="screen">
   <button class="btn-back" onclick="show('s-home')">← quay lại</button>
   <div class="tc mb24">
-    <div style="font-size:50px;margin-bottom:12px">⌨️</div>
-    <h2 style="font-size:22px;font-weight:800;color:#fff">Nhập tên bàn phím</h2>
-    <p style="color:#1e3050;font-size:13px;font-family:'JetBrains Mono',monospace;margin-top:6px">Bàn phím Bluetooth bạn muốn chia sẻ</p>
+    <div class="bt-wrap">
+      <div class="bt-ring" id="r1"></div>
+      <div class="bt-ring" id="r2"></div>
+      <div class="bt-ring" id="r3"></div>
+      <div class="bt-core" id="bt-core">📶</div>
+    </div>
+    <h2 style="font-size:20px;font-weight:800;color:#fff" id="scan-title">Bật Bluetooth & Quét</h2>
+    <p style="color:#1e3050;font-size:12px;font-family:'JetBrains Mono',monospace;margin-top:6px" id="scan-sub">Bấm nút bên dưới, Chrome sẽ hiện danh sách thiết bị thật</p>
   </div>
-  <div class="card">
-    <label class="lbl">Tên bàn phím</label>
-    <input type="text" id="inp-kb" placeholder="VD: Logitech K380, Apple Magic..."/>
-    <div id="err-kb" class="err" style="display:none"></div>
+
+  <button class="bt-scan-btn" id="bt-scan-btn" onclick="startBTScan()">
+    <span style="font-size:22px">🔵</span> Bật Bluetooth &amp; Quét thiết bị
+  </button>
+  <div id="err-bt" class="err" style="display:none;margin-top:10px"></div>
+  <div class="tip tip-yellow mt12">💡 Chỉ dùng được trên <b>Chrome Android</b>. Bật Bluetooth trước khi bấm!</div>
+
+  <div id="scan-result" style="display:none;margin-top:20px">
+    <p style="color:#1e3a5c;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;margin-bottom:10px">THIẾT BỊ TÌM THẤY — BẤM ĐỂ TẠO MÃ</p>
+    <div id="dev-list"></div>
   </div>
-  <button class="btn btn-green" onclick="makeCode()">Tạo mã chia sẻ →</button>
 </div>
 
 <!-- ═══ CODE ═══ -->
@@ -194,7 +182,7 @@ input::placeholder{color:#1a2a44;}
       <span style="color:#1e4030;font-size:12px;font-family:'JetBrains Mono',monospace">Đang chờ thiết bị kia nhập mã...</span>
     </div>
   </div>
-  <div class="tip tip-green">💡 ĐT2 mở app → chọn "Nhập mã kết nối" → nhập mã <b id="code-hint" style="color:#00ffe0"></b></div>
+  <div class="tip tip-green">💡 ĐT2 mở app → "Nhập mã kết nối" → nhập mã <b id="code-hint" style="color:#00ffe0"></b></div>
 </div>
 
 <!-- ═══ APPROVE ═══ -->
@@ -251,9 +239,9 @@ input::placeholder{color:#1a2a44;}
 <!-- ═══ WAITING ═══ -->
 <div id="s-waiting" class="screen tc">
   <div class="bt-wrap" style="margin:20px auto 24px">
-    <div class="bt-ring" style="border-color:#7c6fff"></div>
-    <div class="bt-ring" style="border-color:#7c6fff"></div>
-    <div class="bt-ring" style="border-color:#7c6fff"></div>
+    <div class="bt-ring active" style="border-color:#7c6fff"></div>
+    <div class="bt-ring active" style="border-color:#7c6fff;animation-delay:.6s"></div>
+    <div class="bt-ring active" style="border-color:#7c6fff;animation-delay:1.2s"></div>
     <div class="bt-core" style="background:rgba(124,111,255,.1);border-color:#7c6fff"><span style="animation:blink 1.2s infinite">📡</span></div>
   </div>
   <p class="tag mb8" style="color:#7c6fff80">ĐANG CHỜ</p>
@@ -276,136 +264,150 @@ input::placeholder{color:#1a2a44;}
     <div class="info-row"><span class="info-l">Bàn phím</span><span class="info-v" id="done-kb"></span></div>
     <div class="info-row"><span class="info-l">Quyền</span><span class="info-v">🟢 Đã kích hoạt</span></div>
   </div>
-  <div class="tip tip-green" style="margin-bottom:12px">✅ Bàn phím Bluetooth đã được kết nối với thiết bị của bạn</div>
+  <div class="tip tip-green" style="margin-bottom:12px">✅ Bàn phím Bluetooth đã kết nối thành công!</div>
   <button class="btn btn-purple" onclick="show('s-home')">← Về trang chính</button>
 </div>
 
-</div><!-- /wrap -->
-
+</div>
 <script>
-// ══════════════════════════════════════════════════════════
-//  CONFIG — Firebase Realtime Database URL
-// ══════════════════════════════════════════════════════════
 let DB_URL = localStorage.getItem('btshare_db') || '';
-
-// ── State ──────────────────────────────────────────────────
-let myName = '';
-let currentCode = '';
-let currentKB = '';
-let currentSess = null;
-let reqInfo = null;
-let pollTimer = null;
-
+let myName = '', currentCode = '', currentKB = '';
+let currentSess = null, reqInfo = null, pollTimer = null, btDevice = null;
 const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
 
-// ── Firebase REST API ──────────────────────────────────────
 async function dbSet(code, data) {
-  const url = `${DB_URL}/codes/${code}.json`;
-  const r = await fetch(url, {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  });
-  if (!r.ok) throw new Error('DB write failed');
+  const r = await fetch(`${DB_URL}/codes/${code}.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  if (!r.ok) throw new Error('write fail');
 }
-
 async function dbGet(code) {
-  const url = `${DB_URL}/codes/${code}.json`;
-  const r = await fetch(url);
+  const r = await fetch(`${DB_URL}/codes/${code}.json`);
   if (!r.ok) return null;
-  const data = await r.json();
-  return data; // null if not exists
+  return await r.json();
 }
 
-// ── Screens ────────────────────────────────────────────────
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  window.scrollTo(0, 0);
+  window.scrollTo(0,0);
 }
 
-// ── Firebase setup ─────────────────────────────────────────
 function saveDB() {
-  const v = document.getElementById('inp-dburl').value.trim();
+  const v = document.getElementById('inp-dburl').value.trim().replace(/\/$/,'');
   const err = document.getElementById('err-db');
-  if (!v || !v.includes('firebase')) {
-    err.textContent = 'URL không đúng, phải chứa "firebase"';
-    err.style.display = 'block'; return;
-  }
-  // Remove trailing slash
-  DB_URL = v.replace(/\/$/, '');
-  localStorage.setItem('btshare_db', DB_URL);
-  err.style.display = 'none';
-  show('s-setup');
+  if (!v || !v.includes('firebase')) { err.textContent='❌ URL không đúng, phải chứa "firebase"'; err.style.display='block'; return; }
+  DB_URL = v; localStorage.setItem('btshare_db', DB_URL);
+  err.style.display='none'; show('s-setup');
 }
 
-// ── Setup tên ──────────────────────────────────────────────
 function doSetup() {
   const v = document.getElementById('inp-name').value.trim();
   const err = document.getElementById('err-name');
-  if (!v) { err.textContent = 'Nhập tên thiết bị trước'; err.style.display = 'block'; return; }
-  err.style.display = 'none';
-  myName = v;
+  if (!v) { err.textContent='Nhập tên thiết bị trước'; err.style.display='block'; return; }
+  err.style.display='none'; myName = v;
   document.getElementById('badge-name').textContent = myName;
   show('s-home');
 }
 
-// ── Tạo mã ────────────────────────────────────────────────
-function goCreate() {
-  document.getElementById('inp-kb').value = '';
-  document.getElementById('err-kb').style.display = 'none';
-  show('s-create');
+function goScan() {
+  clearInterval(pollTimer);
+  document.getElementById('dev-list').innerHTML = '';
+  document.getElementById('scan-result').style.display = 'none';
+  document.getElementById('err-bt').style.display = 'none';
+  const btn = document.getElementById('bt-scan-btn');
+  btn.classList.remove('scanning');
+  btn.innerHTML = '<span style="font-size:22px">🔵</span> Bật Bluetooth &amp; Quét thiết bị';
+  document.getElementById('scan-title').textContent = 'Bật Bluetooth & Quét';
+  document.getElementById('scan-sub').textContent = 'Bấm nút bên dưới, Chrome sẽ hiện danh sách thiết bị thật';
+  setRings(false);
+  show('s-scan');
 }
 
-async function makeCode() {
-  const kb = document.getElementById('inp-kb').value.trim();
-  const err = document.getElementById('err-kb');
-  if (!kb) { err.textContent = 'Nhập tên bàn phím trước'; err.style.display = 'block'; return; }
-  err.style.display = 'none';
+function setRings(on) {
+  ['r1','r2','r3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (on) el.classList.add('active'); else el.classList.remove('active');
+  });
+  document.getElementById('bt-core').textContent = on ? '🔵' : '📶';
+}
 
-  currentKB = kb;
-  currentCode = genCode();
-
-  const data = {
-    code: currentCode,
-    owner: myName,
-    keyboard: kb,
-    status: 'waiting',
-    requester: null,
-    ts: Date.now()
-  };
-  currentSess = data;
-
-  try {
-    await dbSet(currentCode, data);
-  } catch(e) {
-    err.textContent = 'Lỗi kết nối Firebase, kiểm tra lại URL';
-    err.style.display = 'block'; return;
+async function startBTScan() {
+  const errEl = document.getElementById('err-bt');
+  errEl.style.display = 'none';
+  if (!navigator.bluetooth) {
+    errEl.textContent = '❌ Trình duyệt không hỗ trợ! Dùng Chrome Android nhé.';
+    errEl.style.display = 'block'; return;
   }
+  const btn = document.getElementById('bt-scan-btn');
+  btn.classList.add('scanning');
+  btn.innerHTML = '<span class="spin">⟳</span> Đang mở popup chọn thiết bị...';
+  document.getElementById('scan-title').textContent = 'Đang quét...';
+  document.getElementById('scan-sub').textContent = 'Chọn bàn phím trong popup của Chrome';
+  setRings(true);
+  try {
+    btDevice = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+    btn.classList.remove('scanning');
+    btn.innerHTML = '<span style="font-size:22px">🔵</span> Quét thiết bị khác';
+    document.getElementById('scan-title').textContent = 'Thiết bị tìm thấy!';
+    document.getElementById('scan-sub').textContent = 'Bấm vào thiết bị để tạo mã chia sẻ';
+    setRings(false);
+    const list = document.getElementById('dev-list');
+    list.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'dev-card';
+    const devName = btDevice.name || 'Bluetooth Device';
+    card.innerHTML = `
+      <div class="dev-card-icon">⌨️</div>
+      <div style="flex:1">
+        <div style="color:#c8e0ff;font-size:15px;font-weight:700">${devName}</div>
+        <div style="color:#00ffe0;font-size:11px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:5px;margin-top:3px">
+          <span style="width:5px;height:5px;border-radius:50%;background:#00ffe0;display:inline-block;animation:blink 1.4s infinite"></span>
+          Bluetooth · Đã tìm thấy
+        </div>
+      </div>
+      <span style="color:#00ffe0;font-size:20px">›</span>
+    `;
+    card.onclick = () => makeCode(devName);
+    document.getElementById('scan-result').style.display = 'block';
+    list.appendChild(card);
+  } catch(e) {
+    btn.classList.remove('scanning');
+    btn.innerHTML = '<span style="font-size:22px">🔵</span> Bật Bluetooth &amp; Quét thiết bị';
+    setRings(false);
+    document.getElementById('scan-title').textContent = 'Bật Bluetooth & Quét';
+    document.getElementById('scan-sub').textContent = 'Bấm nút bên dưới, Chrome sẽ hiện danh sách thiết bị thật';
+    if (e.name === 'NotSupportedError') {
+      errEl.textContent = '❌ Bluetooth chưa bật. Bật Bluetooth rồi thử lại!';
+      errEl.style.display = 'block';
+    } else if (e.name !== 'NotFoundError' && e.name !== 'AbortError') {
+      errEl.textContent = '❌ ' + (e.message || 'Lỗi không xác định');
+      errEl.style.display = 'block';
+    }
+    // Nếu người dùng tắt popup hoặc không chọn → không hiện lỗi
+  }
+}
 
-  // Render code digits
-  document.getElementById('code-kb').textContent = kb;
+async function makeCode(kbName) {
+  currentKB = kbName; currentCode = genCode();
+  const data = { code:currentCode, owner:myName, keyboard:kbName, status:'waiting', requester:null, ts:Date.now() };
+  currentSess = data;
+  try { await dbSet(currentCode, data); } catch(e) { alert('Lỗi Firebase! Kiểm tra lại URL.'); return; }
+  document.getElementById('code-kb').textContent = kbName;
   document.getElementById('code-hint').textContent = currentCode;
   const row = document.getElementById('code-digits');
   row.innerHTML = '';
-  currentCode.split('').forEach((d, i) => {
+  currentCode.split('').forEach((d,i) => {
     const el = document.createElement('div');
-    el.className = 'code-digit';
-    el.textContent = d;
-    el.style.animation = `slideUp .4s ease ${i * .08}s both`;
+    el.className = 'code-digit'; el.textContent = d;
+    el.style.animation = `slideUp .4s ease ${i*.08}s both`;
     row.appendChild(el);
   });
-
   show('s-code');
-
-  // Poll for request
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     try {
       const d = await dbGet(currentCode);
       if (d && d.status === 'requested') {
-        clearInterval(pollTimer);
-        reqInfo = d;
+        clearInterval(pollTimer); reqInfo = d;
         document.getElementById('req-name').textContent = d.requester;
         document.getElementById('req-kb').textContent = d.keyboard;
         show('s-approve');
@@ -414,7 +416,6 @@ async function makeCode() {
   }, 2000);
 }
 
-// ── Approve ───────────────────────────────────────────────
 async function doApprove(yes) {
   clearInterval(pollTimer);
   const upd = { ...reqInfo, status: yes ? 'approved' : 'denied' };
@@ -423,12 +424,9 @@ async function doApprove(yes) {
     document.getElementById('ok-requester').textContent = reqInfo.requester;
     document.getElementById('ok-kb').textContent = '⌨️ ' + reqInfo.keyboard;
     show('s-owner-ok');
-  } else {
-    show('s-home');
-  }
+  } else show('s-home');
 }
 
-// ── Enter code ────────────────────────────────────────────
 function goEnter() {
   document.getElementById('inp-code').value = '';
   document.getElementById('err-code').style.display = 'none';
@@ -438,39 +436,16 @@ function goEnter() {
 async function doSubmitCode() {
   const c = document.getElementById('inp-code').value.trim();
   const err = document.getElementById('err-code');
-  if (c.length !== 6) { err.textContent = 'Nhập đủ 6 chữ số'; err.style.display = 'block'; return; }
+  if (c.length !== 6) { err.textContent='Nhập đủ 6 chữ số'; err.style.display='block'; return; }
   err.style.display = 'none';
-
   document.getElementById('wait-code').textContent = c;
   show('s-waiting');
-
   let d;
-  try { d = await dbGet(c); } catch(e) {
-    err.textContent = 'Lỗi kết nối Firebase';
-    err.style.display = 'block';
-    show('s-enter'); return;
-  }
-
-  if (!d) {
-    err.textContent = '❌ Mã không tồn tại hoặc hết hạn';
-    err.style.display = 'block';
-    show('s-enter'); return;
-  }
-  if (d.status !== 'waiting') {
-    err.textContent = '❌ Mã này đã được dùng rồi';
-    err.style.display = 'block';
-    show('s-enter'); return;
-  }
-
-  const upd = { ...d, status: 'requested', requester: myName };
-  try { await dbSet(c, upd); } catch(e) {
-    err.textContent = 'Lỗi ghi dữ liệu';
-    err.style.display = 'block';
-    show('s-enter'); return;
-  }
-  currentSess = upd;
-
-  // Poll for approval
+  try { d = await dbGet(c); } catch(e) { err.textContent='❌ Lỗi kết nối Firebase'; err.style.display='block'; show('s-enter'); return; }
+  if (!d) { err.textContent='❌ Mã không tồn tại hoặc hết hạn'; err.style.display='block'; show('s-enter'); return; }
+  if (d.status !== 'waiting') { err.textContent='❌ Mã này đã được dùng rồi'; err.style.display='block'; show('s-enter'); return; }
+  const upd = { ...d, status:'requested', requester:myName };
+  try { await dbSet(c, upd); } catch(e) { err.textContent='❌ Lỗi ghi dữ liệu'; err.style.display='block'; show('s-enter'); return; }
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     try {
@@ -483,28 +458,18 @@ async function doSubmitCode() {
         show('s-done');
       } else if (d2.status === 'denied') {
         clearInterval(pollTimer);
-        err.textContent = '❌ Yêu cầu bị từ chối';
-        err.style.display = 'block';
-        show('s-enter');
+        err.textContent='❌ Yêu cầu bị từ chối'; err.style.display='block'; show('s-enter');
       }
     } catch(e) {}
   }, 2000);
 }
 
-// ── Init ───────────────────────────────────────────────────
 window.onload = () => {
-  if (DB_URL) {
-    document.getElementById('inp-dburl').value = DB_URL;
-    show('s-setup');
-  } else {
-    show('s-firebase');
-  }
+  if (DB_URL) { document.getElementById('inp-dburl').value = DB_URL; show('s-setup'); }
+  else show('s-firebase');
 };
-
-// Enter key
 document.getElementById('inp-name').addEventListener('keydown', e => { if(e.key==='Enter') doSetup(); });
 document.getElementById('inp-code').addEventListener('keydown', e => { if(e.key==='Enter') doSubmitCode(); });
-document.getElementById('inp-kb').addEventListener('keydown', e => { if(e.key==='Enter') makeCode(); });
 </script>
 </body>
 </html>
