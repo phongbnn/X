@@ -1,0 +1,16 @@
+{
+  "name": "remote-mouse-pro",
+  "version": "1.0.0",
+  "description": "Turn your phone into a wireless mouse & keyboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0",
+    "robotjs": "^0.6.0",
+    "qrcode": "^1.5.3"
+  },
+  "license": "MIT"
+}
