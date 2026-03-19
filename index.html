@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080810">
+<title>Remote Mouse Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080810;
+  --surface: #0e0e1a;
+  --surface2: #14142a;
+  --surface3: #1c1c38;
+  --accent: #00d4ff;
+  --accent2: #00ff88;
+  --danger: #ff3d71;
+  --warn: #ffaa00;
+  --text: #dde8ff;
+  --muted: #5a5a88;
+  --border: #1e1e3a;
+  --glow: 0 0 20px rgba(0,212,255,0.3);
+  --glow-sm: 0 0 8px rgba(0,212,255,0.2);
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Space Grotesk', sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+/* ─── Noise Texture Overlay ─────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* ─── Top Bar ────────────────────────────────────────── */
+#topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.logo {
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex: 1;
+}
+.logo span { color: var(--muted); font-weight: 300; }
+
+#status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+#status-dot.connected {
+  background: var(--accent2);
+  box-shadow: 0 0 10px var(--accent2);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { box-shadow: 0 0 6px var(--accent2); }
+  50% { box-shadow: 0 0 18px var(--accent2), 0 0 30px rgba(0,255,136,0.2); }
+}
+
+#ping-label {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--muted);
+  min-width: 40px; text-align: right;
+}
+
+.icon-btn {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; font-size: 16px;
+  flex-shrink: 0;
+}
+.icon-btn:active { background: var(--surface3); transform: scale(0.92); }
+.icon-btn.active { background: rgba(0,212,255,0.15); border-color: var(--accent); color: var(--accent); }
+
+/* ─── Mode Tabs ──────────────────────────────────────── */
+#mode-tabs {
+  display: flex; gap: 4px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 9; flex-shrink: 0;
+}
+.tab {
+  flex: 1; padding: 7px 4px;
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted); font-size: 11px; font-weight: 600;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.tab.active {
+  background: rgba(0,212,255,0.12);
+  border-color: var(--accent); color: var(--accent);
+  box-shadow: var(--glow-sm);
+}
+
+/* ─── Main Content ───────────────────────────────────── */
+#main { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+
+.panel { display: none; width: 100%; height: 100%; }
+.panel.active { display: flex; flex-direction: column; }
+
+/* ─── TRACKPAD PANEL ─────────────────────────────────── */
+#panel-trackpad {
+  flex-direction: column;
+}
+
+#trackpad-area {
+  flex: 1; position: relative; overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.04) 0%, transparent 60%),
+    linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  cursor: none; touch-action: none;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Grid lines */
+#trackpad-area::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Center crosshair */
+#trackpad-area::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px; height: 20px;
+  border: 1px solid rgba(0,212,255,0.1);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+#trackpad-hint {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center; pointer-events: none;
+  transition: opacity 0.5s;
+}
+#trackpad-hint.hidden { opacity: 0; }
+#trackpad-hint .icon { font-size: 36px; margin-bottom: 10px; opacity: 0.25; }
+#trackpad-hint p { font-size: 12px; color: var(--muted); font-family: var(--font-mono); line-height: 1.8; }
+
+/* Touch ripple */
+.ripple {
+  position: absolute; border-radius: 50%;
+  width: 50px; height: 50px; margin: -25px;
+  border: 2px solid var(--accent);
+  animation: ripple-anim 0.4s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ripple-anim {
+  from { opacity: 0.8; transform: scale(0.3); }
+  to { opacity: 0; transform: scale(1.5); }
+}
+
+/* Gesture hint */
+#gesture-hint {
+  position: absolute; bottom: 12px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 20px; padding: 4px 14px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--accent);
+  opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  white-space: nowrap;
+}
+#gesture-hint.show { opacity: 1; }
+
+/* Drag indicator */
+#drag-indicator {
+  position: absolute; top: 12px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,61,113,0.15);
+  border: 1px solid rgba(255,61,113,0.4);
+  border-radius: 20px; padding: 4px 14px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--danger);
+  display: none;
+}
+#drag-indicator.show { display: block; }
+
+/* ─── Bottom Buttons ─────────────────────────────────── */
+#btn-row {
+  display: flex; gap: 0; flex-shrink: 0;
+  height: 56px; background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.mouse-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); border: none; background: transparent;
+  cursor: pointer; transition: all 0.1s; position: relative;
+  -webkit-user-select: none;
+}
+.mouse-btn:not(:last-child) { border-right: 1px solid var(--border); }
+.mouse-btn:active, .mouse-btn.pressed {
+  background: rgba(0,212,255,0.08);
+  color: var(--accent);
+}
+#btn-right:active, #btn-right.pressed {
+  background: rgba(255,61,113,0.08);
+  color: var(--danger);
+}
+#btn-scroll {
+  flex: 0.7;
+  font-size: 18px;
+}
+#btn-scroll.lock-on {
+  background: rgba(255,170,0,0.1);
+  color: var(--warn);
+}
+
+/* ─── KEYBOARD PANEL ─────────────────────────────────── */
+#panel-keyboard {
+  flex-direction: column;
+  background: var(--surface);
+  overflow-y: auto;
+}
+
+/* Hidden input to capture BT keyboard */
+#bt-capture {
+  position: fixed; top: -9999px; left: 0;
+  width: 1px; height: 1px; opacity: 0;
+  font-size: 16px; /* prevents iOS zoom */
+}
+
+.kb-section {
+  padding: 8px 10px 4px;
+}
+.kb-section-label {
+  font-family: var(--font-mono); font-size: 9px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-left: 2px;
+}
+
+.kb-row {
+  display: flex; gap: 4px; margin-bottom: 4px;
+}
+
+.key {
+  flex: 1; height: 38px; border-radius: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; font-weight: 500;
+  font-family: var(--font-mono);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.08s; flex-shrink: 1;
+  min-width: 0; text-align: center; position: relative;
+  overflow: hidden;
+}
+.key:active, .key.active {
+  background: rgba(0,212,255,0.15);
+  border-color: var(--accent); color: var(--accent);
+  transform: scale(0.93);
+  box-shadow: var(--glow-sm);
+}
+.key.wide  { flex: 1.5; }
+.key.wider { flex: 2; }
+.key.space { flex: 4; }
+.key.mod {
+  background: var(--surface3);
+  font-size: 10px; color: var(--muted);
+}
+.key.mod.active {
+  background: rgba(0,212,255,0.15);
+  border-color: var(--accent); color: var(--accent);
+}
+.key.danger { color: var(--danger); }
+.key.danger:active { background: rgba(255,61,113,0.15); border-color: var(--danger); }
+.key .sub {
+  position: absolute; top: 2px; right: 4px;
+  font-size: 8px; color: var(--muted); font-weight: 400;
+}
+
+/* BT keyboard status */
+#bt-status {
+  margin: 8px 10px;
+  padding: 10px 14px;
+  background: rgba(0,212,255,0.06);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 10px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+  display: flex; align-items: center; gap: 8px;
+}
+#bt-status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: pulse-dot 1.5s infinite; }
+
+/* Text input mode */
+#text-send-bar {
+  display: flex; gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+  flex-shrink: 0;
+}
+#text-input {
+  flex: 1; height: 40px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font-mono); font-size: 13px;
+  padding: 0 12px; outline: none;
+  -webkit-user-select: text;
+}
+#text-input:focus { border-color: var(--accent); box-shadow: var(--glow-sm); }
+#send-btn {
+  height: 40px; padding: 0 16px;
+  border-radius: 8px; border: none;
+  background: var(--accent); color: var(--bg);
+  font-weight: 700; font-size: 13px;
+  font-family: var(--font-mono); cursor: pointer;
+}
+#send-btn:active { opacity: 0.8; transform: scale(0.95); }
+
+/* ─── MEDIA PANEL ────────────────────────────────────── */
+#panel-media {
+  flex-direction: column; gap: 12px; padding: 16px;
+  overflow-y: auto;
+}
+
+.media-section-title {
+  font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+}
+
+.media-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.media-btn {
+  aspect-ratio: 1; border-radius: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; transition: all 0.15s;
+  font-size: 24px;
+}
+.media-btn span {
+  font-family: var(--font-mono); font-size: 9px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.media-btn:active {
+  background: rgba(0,212,255,0.1); border-color: var(--accent);
+  transform: scale(0.93);
+}
+.media-btn.wide { grid-column: span 3; aspect-ratio: unset; height: 54px; flex-direction: row; font-size: 20px; gap: 10px; }
+.media-btn.wide span { font-size: 11px; }
+
+.vol-row {
+  display: flex; align-items: center; gap: 12px; padding: 4px 0;
+}
+.vol-row label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); min-width: 60px; }
+#vol-slider {
+  flex: 1; height: 4px; border-radius: 2px;
+  -webkit-appearance: none; background: var(--surface3);
+  outline: none; border: none;
+}
+#vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); cursor: pointer;
+  box-shadow: var(--glow-sm);
+}
+
+/* ─── SETTINGS PANEL ─────────────────────────────────── */
+#panel-settings {
+  flex-direction: column; overflow-y: auto; padding: 14px;
+  gap: 12px;
+}
+
+.settings-group {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.settings-group-title {
+  font-family: var(--font-mono); font-size: 9px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 10px 14px 4px;
+}
+.setting-row {
+  display: flex; align-items: center; padding: 12px 14px;
+  border-bottom: 1px solid var(--border); gap: 12px;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { flex: 1; font-size: 13px; }
+.setting-label small { display: block; font-size: 10px; color: var(--muted); font-family: var(--font-mono); margin-top: 2px; }
+
+input[type=range].setting-range {
+  width: 120px; -webkit-appearance: none;
+  height: 4px; border-radius: 2px;
+  background: var(--surface3); outline: none;
+}
+input[type=range].setting-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); cursor: pointer;
+}
+
+.toggle {
+  width: 44px; height: 24px; border-radius: 12px;
+  background: var(--surface3); position: relative; cursor: pointer;
+  transition: background 0.25s; flex-shrink: 0; border: 1px solid var(--border);
+}
+.toggle.on { background: rgba(0,212,255,0.3); border-color: var(--accent); }
+.toggle::after {
+  content: ''; position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--muted); transition: all 0.25s;
+}
+.toggle.on::after { left: 23px; background: var(--accent); }
+
+.setting-val {
+  font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+  min-width: 28px; text-align: right;
+}
+
+/* QR Code */
+#qr-container {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; text-align: center;
+}
+#qr-img { width: 160px; height: 160px; border-radius: 8px; margin: 8px auto; display: block; }
+#qr-url {
+  font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+  margin-top: 8px; word-break: break-all;
+}
+#qr-title { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+
+/* ─── Toast ──────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: calc(70px + var(--safe-bottom)); left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); border-radius: 20px;
+  padding: 8px 18px; font-size: 12px; font-family: var(--font-mono);
+  opacity: 0; transition: all 0.25s; z-index: 100; white-space: nowrap;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.ok { border-color: var(--accent2); color: var(--accent2); }
+#toast.err { border-color: var(--danger); color: var(--danger); }
+
+/* ─── Connecting Overlay ─────────────────────────────── */
+#connecting-overlay {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 20px;
+  z-index: 200; transition: opacity 0.5s;
+}
+#connecting-overlay.gone { opacity: 0; pointer-events: none; }
+
+.spinner {
+  width: 48px; height: 48px; border: 2px solid var(--surface3);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.connect-title {
+  font-family: var(--font-mono); font-size: 16px; color: var(--text);
+  font-weight: 700;
+}
+.connect-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+
+</style>
+</head>
+<body>
+
+<!-- Connecting overlay -->
+<div id="connecting-overlay">
+  <div class="spinner"></div>
+  <div class="connect-title">CONNECTING...</div>
+  <div class="connect-sub" id="connect-sub">Looking for server</div>
+</div>
+
+<!-- Hidden BT keyboard capture -->
+<input id="bt-capture" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+<!-- Top Bar -->
+<div id="topbar">
+  <div class="logo">Remote<span>Mouse</span> Pro</div>
+  <div id="ping-label">— ms</div>
+  <div id="status-dot"></div>
+  <div class="icon-btn" id="btn-settings" onclick="switchTab('settings')" title="Settings">⚙️</div>
+</div>
+
+<!-- Mode Tabs -->
+<div id="mode-tabs">
+  <div class="tab active" data-tab="trackpad" onclick="switchTab('trackpad')">🖱 Pad</div>
+  <div class="tab" data-tab="keyboard" onclick="switchTab('keyboard')">⌨️ Keys</div>
+  <div class="tab" data-tab="media" onclick="switchTab('media')">🎵 Media</div>
+  <div class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Set</div>
+</div>
+
+<!-- Main -->
+<div id="main">
+
+  <!-- ── TRACKPAD PANEL ── -->
+  <div id="panel-trackpad" class="panel active">
+    <div id="trackpad-area">
+      <div id="trackpad-hint">
+        <div class="icon">👆</div>
+        <p>1 finger — Move<br>Tap — Click<br>2 fingers — Scroll<br>Long press — Drag</p>
+      </div>
+      <div id="gesture-hint"></div>
+      <div id="drag-indicator">🔒 DRAG MODE</div>
+    </div>
+    <div id="btn-row">
+      <button class="mouse-btn" id="btn-left" ontouchstart="btnDown('left')" ontouchend="btnUp('left')">◀ LEFT</button>
+      <button class="mouse-btn" id="btn-scroll" onclick="toggleScrollLock()">↕</button>
+      <button class="mouse-btn" id="btn-right" ontouchstart="btnDown('right')" ontouchend="btnUp('right')">RIGHT ▶</button>
+    </div>
+  </div>
+
+  <!-- ── KEYBOARD PANEL ── -->
+  <div id="panel-keyboard" class="panel">
+
+    <div id="bt-status">
+      <div class="dot"></div>
+      Bluetooth keyboard ready — physical keys forwarded to PC
+    </div>
+
+    <!-- Modifier keys -->
+    <div class="kb-section">
+      <div class="kb-section-label">Modifiers</div>
+      <div class="kb-row">
+        <div class="key mod wide" data-mod="control" onclick="toggleMod('control')">Ctrl</div>
+        <div class="key mod wide" data-mod="shift" onclick="toggleMod('shift')">Shift</div>
+        <div class="key mod wide" data-mod="alt" onclick="toggleMod('alt')">Alt</div>
+        <div class="key mod wide" data-mod="meta" onclick="toggleMod('meta')">⊞ Win</div>
+      </div>
+    </div>
+
+    <!-- Function Keys -->
+    <div class="kb-section">
+      <div class="kb-section-label">Function</div>
+      <div class="kb-row">
+        <div class="key" onclick="sendKey('f1')">F1</div>
+        <div class="key" onclick="sendKey('f2')">F2</div>
+        <div class="key" onclick="sendKey('f3')">F3</div>
+        <div class="key" onclick="sendKey('f4')">F4</div>
+        <div class="key" onclick="sendKey('f5')">F5</div>
+        <div class="key" onclick="sendKey('f6')">F6</div>
+      </div>
+      <div class="kb-row">
+        <div class="key" onclick="sendKey('f7')">F7</div>
+        <div class="key" onclick="sendKey('f8')">F8</div>
+        <div class="key" onclick="sendKey('f9')">F9</div>
+        <div class="key" onclick="sendKey('f10')">F10</div>
+        <div class="key" onclick="sendKey('f11')">F11</div>
+        <div class="key" onclick="sendKey('f12')">F12</div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="kb-section">
+      <div class="kb-section-label">Navigation</div>
+      <div class="kb-row">
+        <div class="key" onclick="sendKey('escape')">Esc</div>
+        <div class="key" onclick="sendKey('tab')">Tab</div>
+        <div class="key" onclick="sendKey('home')">Home</div>
+        <div class="key" onclick="sendKey('end')">End</div>
+        <div class="key" onclick="sendKey('pageup')">PgUp</div>
+        <div class="key" onclick="sendKey('pagedown')">PgDn</div>
+      </div>
+      <div class="kb-row">
+        <div class="key" onclick="sendKey('insert')">Ins</div>
+        <div class="key danger" onclick="sendKey('delete')">Del</div>
+        <div class="key" style="flex:0.5"></div>
+        <div class="key" style="flex:1" onclick="sendKey('up')">▲</div>
+        <div class="key" style="flex:0.5"></div>
+        <div class="key danger" onclick="sendKey('backspace')">⌫</div>
+      </div>
+      <div class="kb-row">
+        <div class="key" onclick="sendKey('enter')">↵ Enter</div>
+        <div class="key" onclick="sendKey('left')">◀</div>
+        <div class="key" onclick="sendKey('down')">▼</div>
+        <div class="key" onclick="sendKey('right')">▶</div>
+        <div class="key" onclick="sendKey('space')">Space</div>
+      </div>
+    </div>
+
+    <!-- Common Shortcuts -->
+    <div class="kb-section">
+      <div class="kb-section-label">Quick Shortcuts</div>
+      <div class="kb-row">
+        <div class="key" onclick="sendCombo(['control'],'c')">Copy</div>
+        <div class="key" onclick="sendCombo(['control'],'v')">Paste</div>
+        <div class="key" onclick="sendCombo(['control'],'x')">Cut</div>
+        <div class="key" onclick="sendCombo(['control'],'z')">Undo</div>
+        <div class="key" onclick="sendCombo(['control','shift'],'z')">Redo</div>
+      </div>
+      <div class="kb-row">
+        <div class="key" onclick="sendCombo(['control'],'a')">Sel All</div>
+        <div class="key" onclick="sendCombo(['control'],'s')">Save</div>
+        <div class="key" onclick="sendCombo(['control'],'w')">Close</div>
+        <div class="key" onclick="sendCombo(['alt'],'f4')">Exit</div>
+        <div class="key" onclick="sendCombo(['control','shift'],'escape')">TaskMgr</div>
+      </div>
+      <div class="kb-row">
+        <div class="key" onclick="sendCombo(['control'],'t')">New Tab</div>
+        <div class="key" onclick="sendCombo(['alt'],'left')">← Back</div>
+        <div class="key" onclick="sendCombo(['alt'],'right')">Fwd →</div>
+        <div class="key" onclick="sendKey('f5')">Reload</div>
+        <div class="key" onclick="sendCombo(['control'],'l')">Addr Bar</div>
+      </div>
+    </div>
+
+    <!-- Text input send bar -->
+    <div id="text-send-bar">
+      <input id="text-input" type="text" placeholder="Type text → send to PC..." autocomplete="off" autocorrect="off">
+      <button id="send-btn" onclick="sendTextInput()">Send ↵</button>
+    </div>
+  </div>
+
+  <!-- ── MEDIA PANEL ── -->
+  <div id="panel-media" class="panel">
+    <div>
+      <div class="media-section-title">Playback</div>
+      <div class="media-grid">
+        <div class="media-btn" onclick="sendKey('audio_prev')">⏮<span>Prev</span></div>
+        <div class="media-btn" onclick="sendKey('audio_play')">⏯<span>Play/Pause</span></div>
+        <div class="media-btn" onclick="sendKey('audio_next')">⏭<span>Next</span></div>
+        <div class="media-btn" onclick="sendKey('audio_stop')">⏹<span>Stop</span></div>
+        <div class="media-btn" onclick="sendKey('audio_mute')">🔇<span>Mute</span></div>
+        <div class="media-btn" onclick="sendCombo(['meta'],'d')">🖥<span>Desktop</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="media-section-title">Volume</div>
+      <div class="media-grid">
+        <div class="media-btn" onclick="sendKey('audio_vol_down')">🔉<span>Vol –</span></div>
+        <div class="media-btn" onclick="sendKey('audio_mute')">🔇<span>Mute</span></div>
+        <div class="media-btn" onclick="sendKey('audio_vol_up')">🔊<span>Vol +</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="media-section-title">System</div>
+      <div class="media-grid">
+        <div class="media-btn wide" onclick="sendCombo(['meta'],'l')">🔒<span>Lock Screen</span></div>
+        <div class="media-btn wide" onclick="sendCombo(['meta'],'e')">📁<span>File Explorer</span></div>
+        <div class="media-btn wide" onclick="sendCombo(['control','alt'],'delete')">⚡<span>Ctrl+Alt+Del</span></div>
+        <div class="media-btn wide" onclick="sendCombo(['meta'],'tab')">🗂<span>Task View</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS PANEL ── -->
+  <div id="panel-settings" class="panel">
+
+    <!-- QR Code -->
+    <div id="qr-container">
+      <div id="qr-title">Scan to connect from another device</div>
+      <img id="qr-img" src="" alt="QR Code" style="display:none">
+      <div id="qr-url">Loading...</div>
+    </div>
+
+    <!-- Mouse settings -->
+    <div class="settings-group">
+      <div class="settings-group-title">Mouse</div>
+      <div class="setting-row">
+        <div class="setting-label">
+          Sensitivity
+          <small>Higher = faster cursor</small>
+        </div>
+        <input type="range" class="setting-range" id="sens-slider" min="0.5" max="5" step="0.1" value="2" oninput="updateSetting('sensitivity', this.value)">
+        <div class="setting-val" id="sens-val">2.0</div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          Acceleration
+          <small>Speed boost on fast moves</small>
+        </div>
+        <div class="toggle on" id="toggle-accel" onclick="toggleSetting('acceleration')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          Natural Scroll
+          <small>Invert scroll direction</small>
+        </div>
+        <div class="toggle" id="toggle-naturalscroll" onclick="toggleSetting('naturalScroll')"></div>
+      </div>
+    </div>
+
+    <!-- Scroll settings -->
+    <div class="settings-group">
+      <div class="settings-group-title">Scroll</div>
+      <div class="setting-row">
+        <div class="setting-label">
+          Scroll Speed
+          <small>Two-finger scroll rate</small>
+        </div>
+        <input type="range" class="setting-range" id="scroll-slider" min="0.5" max="5" step="0.1" value="2" oninput="updateSetting('scrollSpeed', this.value)">
+        <div class="setting-val" id="scroll-val">2.0</div>
+      </div>
+    </div>
+
+    <!-- Gesture settings -->
+    <div class="settings-group">
+      <div class="settings-group-title">Gestures</div>
+      <div class="setting-row">
+        <div class="setting-label">Tap to Click<small>Single finger tap = left click</small></div>
+        <div class="toggle on" id="toggle-tapclick" onclick="toggleSetting('tapClick')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Two-Finger Tap = Right Click<small>Two fingers tap = right click</small></div>
+        <div class="toggle on" id="toggle-2tap" onclick="toggleSetting('twoFingerRight')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          Tap Threshold
+          <small>Max ms for tap detection</small>
+        </div>
+        <input type="range" class="setting-range" id="tap-slider" min="80" max="400" step="10" value="200" oninput="updateSetting('tapThreshold', this.value)">
+        <div class="setting-val" id="tap-val">200</div>
+      </div>
+    </div>
+
+    <!-- Connection info -->
+    <div class="settings-group">
+      <div class="settings-group-title">Connection</div>
+      <div class="setting-row">
+        <div class="setting-label">Status<small id="conn-status-text">Disconnected</small></div>
+        <div id="status-dot-settings" style="width:10px;height:10px;border-radius:50%;background:var(--danger);"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Latency<small>Round-trip ping</small></div>
+        <div class="setting-val" id="ping-display">—</div>
+      </div>
+      <div class="setting-row" style="cursor:pointer" onclick="reconnect()">
+        <div class="setting-label" style="color:var(--accent)">Reconnect</div>
+        <div style="color:var(--accent);font-size:18px">↺</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div id="toast"></div>
+
+<script>
+// ─── State ─────────────────────────────────────────────────────────────
+
+const cfg = {
+  sensitivity: 2.0,
+  scrollSpeed: 2.0,
+  tapThreshold: 200,
+  tapMoveTolerance: 10,
+  acceleration: true,
+  naturalScroll: false,
+  tapClick: true,
+  twoFingerRight: true,
+};
+
+let ws = null;
+let wsReady = false;
+let reconnectTimer = null;
+let pingInterval = null;
+let pingTime = 0;
+let activePointers = new Map(); // pointerId → {x, y, startX, startY, startTime}
+let isDragging = false;
+let scrollLocked = false;
+let activeMods = new Set();
+let lastTapTime = 0;
+let lastTapX = 0, lastTapY = 0;
+let longPressTimer = null;
+let twoFingerStartDist = null;
+let gestureHintTimer = null;
+
+// ─── WebSocket ──────────────────────────────────────────────────────────
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = `${proto}//${location.host}`;
+  document.getElementById('connect-sub').textContent = `ws://${location.hostname}:${location.port}`;
+
+  try {
+    ws = new WebSocket(url);
+  } catch(e) {
+    scheduleReconnect();
+    return;
+  }
+
+  ws.onopen = () => {
+    wsReady = true;
+    setStatus(true);
+    hideOverlay();
+    showToast('Connected ✓', 'ok');
+    startPing();
+    loadQR();
+  };
+
+  ws.onclose = () => {
+    wsReady = false;
+    setStatus(false);
+    stopPing();
+    if (!reconnectTimer) scheduleReconnect();
+  };
+
+  ws.onerror = () => {
+    ws.close();
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'pong') {
+        const lat = Date.now() - msg.ts;
+        document.getElementById('ping-label').textContent = lat + 'ms';
+        document.getElementById('ping-display').textContent = lat + 'ms';
+      }
+    } catch(e) {}
+  };
+}
+
+function scheduleReconnect() {
+  clearTimeout(reconnectTimer);
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connect();
+  }, 2000);
+}
+
+function reconnect() {
+  if (ws) ws.close();
+  wsReady = false;
+  clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+  showOverlay();
+  setTimeout(connect, 300);
+}
+
+function send(obj) {
+  if (ws && wsReady && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(obj));
+    return true;
+  }
+  return false;
+}
+
+function startPing() {
+  stopPing();
+  pingInterval = setInterval(() => {
+    send({ type: 'ping', ts: Date.now() });
+  }, 2000);
+}
+function stopPing() {
+  clearInterval(pingInterval);
+  pingInterval = null;
+}
+
+// ─── UI Helpers ─────────────────────────────────────────────────────────
+
+function setStatus(on) {
+  document.getElementById('status-dot').className = on ? 'connected' : '';
+  const sd2 = document.getElementById('status-dot-settings');
+  if (sd2) {
+    sd2.style.background = on ? 'var(--accent2)' : 'var(--danger)';
+    sd2.style.boxShadow = on ? '0 0 8px var(--accent2)' : '0 0 8px var(--danger)';
+  }
+  const txt = document.getElementById('conn-status-text');
+  if (txt) txt.textContent = on ? 'Connected' : 'Disconnected';
+  if (!on) {
+    document.getElementById('ping-label').textContent = '— ms';
+    document.getElementById('ping-display').textContent = '—';
+  }
+}
+
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 2200);
+}
+
+function hideOverlay() {
+  const ov = document.getElementById('connecting-overlay');
+  ov.classList.add('gone');
+  setTimeout(() => ov.style.display = 'none', 600);
+}
+function showOverlay() {
+  const ov = document.getElementById('connecting-overlay');
+  ov.style.display = 'flex';
+  ov.classList.remove('gone');
+}
+
+function showGesture(text) {
+  const el = document.getElementById('gesture-hint');
+  el.textContent = text; el.classList.add('show');
+  clearTimeout(gestureHintTimer);
+  gestureHintTimer = setTimeout(() => el.classList.remove('show'), 1200);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+  if (tab === 'settings') loadQR();
+}
+
+function loadQR() {
+  fetch('/qr').then(r => r.json()).then(data => {
+    if (data.qr) {
+      const img = document.getElementById('qr-img');
+      img.src = data.qr; img.style.display = 'block';
+    }
+    document.getElementById('qr-url').textContent = data.url || '';
+  }).catch(() => {});
+}
+
+// Ripple
+function spawnRipple(x, y) {
+  const pad = document.getElementById('trackpad-area');
+  const r = document.createElement('div');
+  r.className = 'ripple';
+  r.style.left = x + 'px'; r.style.top = y + 'px';
+  pad.appendChild(r);
+  setTimeout(() => r.remove(), 500);
+}
+
+// ─── Trackpad Pointer Events ────────────────────────────────────────────
+
+const trackpad = document.getElementById('trackpad-area');
+const hint = document.getElementById('trackpad-hint');
+
+trackpad.addEventListener('pointerdown', onPointerDown, { passive: false });
+trackpad.addEventListener('pointermove', onPointerMove, { passive: false });
+trackpad.addEventListener('pointerup', onPointerUp, { passive: false });
+trackpad.addEventListener('pointercancel', onPointerUp, { passive: false });
+trackpad.addEventListener('contextmenu', e => e.preventDefault());
+
+function onPointerDown(e) {
+  e.preventDefault();
+  trackpad.setPointerCapture(e.pointerId);
+  hint.classList.add('hidden');
+
+  const rect = trackpad.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  activePointers.set(e.pointerId, {
+    x, y, startX: x, startY: y,
+    startTime: Date.now(), moved: false
+  });
+
+  if (activePointers.size === 1) {
+    // Long press → drag mode
+    longPressTimer = setTimeout(() => {
+      if (!isDragging && activePointers.size === 1) {
+        isDragging = true;
+        send({ type: 'mousedown', button: 'left' });
+        document.getElementById('drag-indicator').classList.add('show');
+        showGesture('🔒 Drag active');
+        navigator.vibrate && navigator.vibrate(30);
+      }
+    }, 500);
+  }
+
+  if (activePointers.size === 2) {
+    clearTimeout(longPressTimer);
+    // track distance for pinch
+    const pts = [...activePointers.values()];
+    twoFingerStartDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+  }
+}
+
+let lastMoveTime = 0;
+
+function onPointerMove(e) {
+  e.preventDefault();
+  const ptr = activePointers.get(e.pointerId);
+  if (!ptr) return;
+
+  const rect = trackpad.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const dx = x - ptr.x;
+  const dy = y - ptr.y;
+
+  // mark moved if significant
+  const totalDx = x - ptr.startX;
+  const totalDy = y - ptr.startY;
+  if (Math.abs(totalDx) > 3 || Math.abs(totalDy) > 3) {
+    ptr.moved = true;
+    clearTimeout(longPressTimer);
+  }
+
+  ptr.x = x; ptr.y = y;
+
+  const now = Date.now();
+  if (now - lastMoveTime < 8) return; // ~120fps cap
+  lastMoveTime = now;
+
+  if (activePointers.size === 1) {
+    // Single finger: move mouse
+    let speed = cfg.sensitivity;
+    if (cfg.acceleration) {
+      const vel = Math.hypot(dx, dy);
+      speed *= 1 + Math.min(vel * 0.08, 2.5);
+    }
+    const mdx = Math.round(dx * speed);
+    const mdy = Math.round(dy * speed);
+    if (mdx !== 0 || mdy !== 0) {
+      send({ type: 'move', dx: mdx, dy: mdy });
+    }
+  }
+  else if (activePointers.size === 2) {
+    // Two finger: scroll
+    const pts = [...activePointers.values()];
+    const avgDx = (pts[0].x + pts[1].x) / 2;
+    const avgDy = (pts[0].y + pts[1].y) / 2;
+
+    // Use the moved pointer's delta
+    const sdx = Math.round(dx * cfg.scrollSpeed * 0.4);
+    const sdy = Math.round(dy * cfg.scrollSpeed * 0.4);
+
+    if (sdx !== 0 || sdy !== 0) {
+      const scrollDx = cfg.naturalScroll ? -sdx : sdx;
+      const scrollDy = cfg.naturalScroll ? -sdy : sdy;
+      send({ type: 'scroll', dx: scrollDx, dy: scrollDy });
+    }
+  }
+}
+
+function onPointerUp(e) {
+  e.preventDefault();
+  const ptr = activePointers.get(e.pointerId);
+  if (!ptr) return;
+
+  const wasTwoFinger = activePointers.size === 2;
+  activePointers.delete(e.pointerId);
+  clearTimeout(longPressTimer);
+
+  const duration = Date.now() - ptr.startTime;
+  const dist = Math.hypot(e.clientX - ptr.startX, e.clientY - ptr.startY);
+  // client might have offset correction issues so let's use startX/startY from stored
+  const realDist = Math.hypot(ptr.x - ptr.startX, ptr.y - ptr.startY);
+
+  if (isDragging && activePointers.size === 0) {
+    isDragging = false;
+    send({ type: 'mouseup', button: 'left' });
+    document.getElementById('drag-indicator').classList.remove('show');
+    showGesture('🔓 Drag released');
+    return;
+  }
+
+  // Tap detection
+  if (duration < cfg.tapThreshold && realDist < cfg.tapMoveTolerance) {
+    if (wasTwoFinger) {
+      // Two-finger tap = right click
+      if (cfg.twoFingerRight) {
+        send({ type: 'click', button: 'right' });
+        showGesture('Right click');
+        spawnRipple(ptr.x, ptr.y);
+        navigator.vibrate && navigator.vibrate([15,10,15]);
+      }
+    } else if (!wasTwoFinger && activePointers.size === 0 && cfg.tapClick) {
+      // Single tap = left click (or double)
+      const now = Date.now();
+      const doubleTap = (now - lastTapTime < 350)
+        && Math.abs(ptr.x - lastTapX) < 25
+        && Math.abs(ptr.y - lastTapY) < 25;
+
+      if (doubleTap) {
+        send({ type: 'click', button: 'left', double: true });
+        showGesture('Double click');
+        lastTapTime = 0;
+        navigator.vibrate && navigator.vibrate([10,5,10,5,10]);
+      } else {
+        send({ type: 'click', button: 'left' });
+        lastTapTime = now;
+        lastTapX = ptr.x; lastTapY = ptr.y;
+        navigator.vibrate && navigator.vibrate(15);
+      }
+      spawnRipple(ptr.x, ptr.y);
+    }
+  }
+}
+
+// ─── Bottom buttons ──────────────────────────────────────────────────────
+
+function btnDown(button) {
+  send({ type: 'mousedown', button });
+  document.getElementById('btn-' + button).classList.add('pressed');
+  navigator.vibrate && navigator.vibrate(20);
+}
+function btnUp(button) {
+  send({ type: 'mouseup', button });
+  document.getElementById('btn-' + button).classList.remove('pressed');
+}
+
+function toggleScrollLock() {
+  scrollLocked = !scrollLocked;
+  document.getElementById('btn-scroll').classList.toggle('lock-on', scrollLocked);
+  showGesture(scrollLocked ? '↕ Scroll lock ON' : '↕ Scroll lock OFF');
+}
+
+// ─── Keyboard ────────────────────────────────────────────────────────────
+
+function sendKey(key, mods) {
+  const modList = mods || [...activeMods].filter(m => activeMods.has(m));
+  send({ type: 'keypress', key, modifiers: modList });
+  navigator.vibrate && navigator.vibrate(10);
+  // Auto-release one-shot mods
+  if (activeMods.size > 0) {
+    activeMods.forEach(m => {
+      activeMods.delete(m);
+      document.querySelector(`[data-mod="${m}"]`)?.classList.remove('active');
+    });
+  }
+}
+
+function sendCombo(mods, key) {
+  send({ type: 'keypress', key, modifiers: mods });
+  navigator.vibrate && navigator.vibrate(10);
+}
+
+function toggleMod(mod) {
+  if (activeMods.has(mod)) {
+    activeMods.delete(mod);
+    document.querySelector(`[data-mod="${mod}"]`)?.classList.remove('active');
+  } else {
+    activeMods.add(mod);
+    document.querySelector(`[data-mod="${mod}"]`)?.classList.add('active');
+  }
+}
+
+function sendTextInput() {
+  const inp = document.getElementById('text-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  send({ type: 'type', text });
+  inp.value = '';
+  showToast('Text sent ✓', 'ok');
+}
+
+document.getElementById('text-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendTextInput();
+});
+
+// ─── BT Keyboard capture ─────────────────────────────────────────────────
+
+const KEY_MAP_BROWSER = {
+  'Enter': 'enter', 'Backspace': 'backspace', 'Tab': 'tab', 'Escape': 'escape',
+  ' ': 'space', 'Delete': 'delete',
+  'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right',
+  'Home': 'home', 'End': 'end', 'PageUp': 'pageup', 'PageDown': 'pagedown',
+  'Insert': 'insert', 'CapsLock': 'caps_lock',
+  'F1':'f1','F2':'f2','F3':'f3','F4':'f4','F5':'f5','F6':'f6',
+  'F7':'f7','F8':'f8','F9':'f9','F10':'f10','F11':'f11','F12':'f12',
+  'AudioVolumeMute':'audio_mute','AudioVolumeUp':'audio_vol_up','AudioVolumeDown':'audio_vol_down',
+  'MediaPlayPause':'audio_play','MediaStop':'audio_stop',
+  'MediaTrackNext':'audio_next','MediaTrackPrevious':'audio_prev',
+};
+
+const IGNORED_KEYS = new Set(['Control','Shift','Alt','Meta','OS','Win']);
+
+document.addEventListener('keydown', (e) => {
+  // Don't intercept typing in text input field
+  if (document.activeElement === document.getElementById('text-input')) return;
+  if (document.activeElement === document.getElementById('bt-capture') &&
+      e.key.length === 1) {
+    // Will be handled by input event
+  }
+
+  const key = KEY_MAP_BROWSER[e.key] || (e.key.length === 1 ? e.key.toLowerCase() : null);
+  if (!key || IGNORED_KEYS.has(e.key)) return;
+
+  e.preventDefault();
+  const mods = [];
+  if (e.ctrlKey) mods.push('control');
+  if (e.shiftKey) mods.push('shift');
+  if (e.altKey) mods.push('alt');
+  if (e.metaKey) mods.push('meta');
+
+  send({ type: 'keypress', key, modifiers: mods });
+}, { passive: false });
+
+// ─── Settings ─────────────────────────────────────────────────────────────
+
+function updateSetting(key, val) {
+  cfg[key] = parseFloat(val);
+  const map = {
+    sensitivity: 'sens-val',
+    scrollSpeed: 'scroll-val',
+    tapThreshold: 'tap-val',
+  };
+  if (map[key]) document.getElementById(map[key]).textContent = parseFloat(val).toFixed(key === 'tapThreshold' ? 0 : 1);
+  saveSettings();
+}
+
+function toggleSetting(key) {
+  cfg[key] = !cfg[key];
+  document.getElementById('toggle-' + key.toLowerCase())?.classList.toggle('on', cfg[key]);
+  saveSettings();
+}
+
+function saveSettings() {
+  try { localStorage.setItem('rmp_cfg', JSON.stringify(cfg)); } catch(e) {}
+}
+
+function loadSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('rmp_cfg') || '{}');
+    Object.assign(cfg, saved);
+    document.getElementById('sens-slider').value = cfg.sensitivity;
+    document.getElementById('sens-val').textContent = cfg.sensitivity.toFixed(1);
+    document.getElementById('scroll-slider').value = cfg.scrollSpeed;
+    document.getElementById('scroll-val').textContent = cfg.scrollSpeed.toFixed(1);
+    document.getElementById('tap-slider').value = cfg.tapThreshold;
+    document.getElementById('tap-val').textContent = cfg.tapThreshold;
+    document.getElementById('toggle-acceleration').classList.toggle('on', cfg.acceleration);
+    document.getElementById('toggle-naturalscroll').classList.toggle('on', cfg.naturalScroll);
+    document.getElementById('toggle-tapclick').classList.toggle('on', cfg.tapClick);
+    document.getElementById('toggle-2tap').classList.toggle('on', cfg.twoFingerRight);
+  } catch(e) {}
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────
+
+loadSettings();
+connect();
+
+// Wake lock to prevent screen sleep during use
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      await navigator.wakeLock.request('screen');
+    }
+  } catch(e) {}
+}
+requestWakeLock();
+
+// Re-request on visibility change
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+
+// Keep BT capture focused
+function refocusBT() {
+  const active = document.activeElement;
+  if (active !== document.getElementById('text-input')) {
+    // don't steal focus from text-input
+  }
+}
+
+</script>
+</body>
+</html>
